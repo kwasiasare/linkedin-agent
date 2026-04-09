@@ -1,0 +1,21 @@
+{
+  "name": "spreadcom-linkedin-agent",
+  "version": "1.0.0",
+  "description": "Spreadcom LLC LinkedIn automation agent — daily posting, community management, lead tracking",
+  "type": "module",
+  "main": "src/agent.js",
+  "scripts": {
+    "start": "node src/agent.js",
+    "post": "node src/agent.js --task post",
+    "engage": "node src/agent.js --task engage",
+    "report": "node src/agent.js --task report",
+    "auth": "node src/auth.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
+    "node-cron": "^3.0.3",
+    "winston": "^3.13.0"
+  }
+}

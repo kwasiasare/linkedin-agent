@@ -1,0 +1,10 @@
+node_modules/
+.env
+logs/*.log
+logs/report_*.md
+data/leads.json
+data/replied_comments.json
+
+.early.coverage
+.DS_Store
+.claude/
