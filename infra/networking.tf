@@ -1,4 +1,4 @@
-resource "azurerm_virtual_network" "main" {
+resource "azurerm_virtual_network" {
   name                = "vnet-${var.project_name}"
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.main.location
@@ -7,7 +7,7 @@ resource "azurerm_virtual_network" "main" {
   tags = local.common_tags
 }
 
-resource "azurerm_subnet" "container_apps" {
+resource "azurerm_subnet" {
   name                 = "snet-container-apps"
   resource_group_name  = azurerm_resource_group.main.name
   virtual_network_name = azurerm_virtual_network.main.name
@@ -16,45 +16,49 @@ resource "azurerm_subnet" "container_apps" {
   delegation {
     name = "Microsoft.App.environments"
     service_delegation {
-      name    = "Microsoft.App/environments"
-      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
+      name = "Microsoft.App/environments"
     }
   }
 }
 
-resource "azurerm_private_endpoint" "key_vault" {
-  name                = "pe-${var.project_name}-keyvault"
+resource "azurerm_private_endpoint" {
+  name                = "pe-${var.project_name}-kv"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
-  subnet_id           = azurerm_subnet.container_apps.id
+  subnet_id           = azurerm_subnet.main.id
 
   private_service_connection {
-    name                           = "psc-keyvault"
+    name                           = "psc-${var.project_name}-kv"
     private_connection_resource_id = azurerm_key_vault.main.id
-    subresource_names              = ["vault"]
     is_manual_connection           = false
-  }
-
-  private_dns_zone_group {
-    name                 = "default"
-    private_dns_zone_ids = [azurerm_private_dns_zone.key_vault.id]
+    subresource_names              = ["vault"]
   }
 
   tags = local.common_tags
 }
 
-resource "azurerm_private_dns_zone" "key_vault" {
+resource "azurerm_private_dns_zone" {
   name                = "privatelink.vaultcore.azure.net"
   resource_group_name = azurerm_resource_group.main.name
 
   tags = local.common_tags
 }
 
-resource "azurerm_private_dns_zone_virtual_network_link" "key_vault" {
-  name                  = "pdns-link-keyvault"
+resource "azurerm_private_dns_zone_virtual_network_link" {
+  name                  = "pdns-link-${var.project_name}"
   resource_group_name   = azurerm_resource_group.main.name
-  private_dns_zone_name = azurerm_private_dns_zone.key_vault.name
+  private_dns_zone_name = azurerm_private_dns_zone.main.name
   virtual_network_id    = azurerm_virtual_network.main.id
+
+  tags = local.common_tags
+}
+
+resource "azurerm_private_dns_a_record" {
+  name                = azurerm_key_vault.main.name
+  zone_name           = azurerm_private_dns_zone.main.name
+  resource_group_name = azurerm_resource_group.main.name
+  ttl                 = 300
+  records             = [azurerm_private_endpoint.main.private_service_connection.0.private_ip_address]
 
   tags = local.common_tags
 }
