@@ -28,20 +28,14 @@ variable "container_image" {
   default     = "linkedin-agent:latest"
 }
 
-variable "storage_account_name" {
-  description = "Storage account name for backend"
+variable "cron_schedule" {
+  description = "Cron schedule for the LinkedIn agent"
   type        = string
-  default     = "stlinkedinagent"
+  default     = "0 9 * * 1-5"
 }
 
-variable "backend_container_name" {
-  description = "Storage container name for terraform state"
-  type        = string
-  default     = "terraform-state"
-}
-
-variable "backend_key" {
-  description = "Terraform state file key"
-  type        = string
-  default     = "linkedin-agent.tfstate"
+variable "storage_size_gb" {
+  description = "Storage allocation in GB"
+  type        = number
+  default     = 5
 }
