@@ -1,4 +1,4 @@
-resource "azurerm_log_analytics_workspace" "main" {
+resource "azurerm_log_analytics_workspace" {
   name                = "law-${var.project_name}"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
@@ -8,8 +8,8 @@ resource "azurerm_log_analytics_workspace" "main" {
   tags = local.common_tags
 }
 
-resource "azurerm_application_insights" "main" {
-  name                = "appi-${var.project_name}"
+resource "azurerm_application_insights" {
+  name                = "ai-${var.project_name}"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   workspace_id        = azurerm_log_analytics_workspace.main.id
@@ -18,7 +18,7 @@ resource "azurerm_application_insights" "main" {
   tags = local.common_tags
 }
 
-resource "azurerm_monitor_action_group" "main" {
+resource "azurerm_monitor_action_group" {
   name                = "ag-${var.project_name}"
   resource_group_name = azurerm_resource_group.main.name
   short_name          = "linkedinag"
@@ -26,45 +26,21 @@ resource "azurerm_monitor_action_group" "main" {
   tags = local.common_tags
 }
 
-resource "azurerm_monitor_metric_alert" "container_app_cpu" {
-  name                = "alert-${var.project_name}-cpu"
+resource "azurerm_monitor_metric_alert" {
+  name                = "alert-${var.project_name}-failures"
   resource_group_name = azurerm_resource_group.main.name
-  scopes              = [azurerm_container_app.linkedin_agent.id]
-  description         = "Container App CPU usage is too high"
+  scopes              = [azurerm_application_insights.main.id]
+  description         = "Alert when LinkedIn agent job failures exceed threshold"
   severity            = 2
-  frequency           = "PT1M"
-  window_size         = "PT5M"
+  frequency           = "PT5M"
+  window_size         = "PT15M"
 
   criteria {
-    metric_namespace = "Microsoft.App/containerApps"
-    metric_name      = "CpuPercentage"
-    aggregation      = "Average"
+    metric_namespace = "microsoft.insights/components"
+    metric_name      = "exceptions/count"
+    aggregation      = "Count"
     operator         = "GreaterThan"
-    threshold        = 80
-  }
-
-  action {
-    action_group_id = azurerm_monitor_action_group.main.id
-  }
-
-  tags = local.common_tags
-}
-
-resource "azurerm_monitor_metric_alert" "container_app_memory" {
-  name                = "alert-${var.project_name}-memory"
-  resource_group_name = azurerm_resource_group.main.name
-  scopes              = [azurerm_container_app.linkedin_agent.id]
-  description         = "Container App memory usage is too high"
-  severity            = 2
-  frequency           = "PT1M"
-  window_size         = "PT5M"
-
-  criteria {
-    metric_namespace = "Microsoft.App/containerApps"
-    metric_name      = "MemoryPercentage"
-    aggregation      = "Average"
-    operator         = "GreaterThan"
-    threshold        = 80
+    threshold        = 5
   }
 
   action {
