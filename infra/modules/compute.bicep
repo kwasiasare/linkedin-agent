@@ -4,9 +4,6 @@ param location string
 @description('Environment identifier for resource naming')
 param environmentId string
 
-@description('Virtual network resource ID')
-param vnetId string
-
 @description('Container Apps subnet resource ID')
 param containerAppSubnetId string
 
@@ -57,10 +54,23 @@ resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-
   tags: tags
 }
 
+// Existing resources for role assignments
+resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
+  name: containerRegistryName
+}
+
+resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
+  name: keyVaultName
+}
+
+resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
+  name: storageAccountName
+}
+
 // Role assignment: ACR Pull
 resource acrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(containerRegistryId, managedIdentity.id, '7f951dda-4ed3-4680-a7ca-43fe172d538d')
-  scope: resourceId('Microsoft.ContainerRegistry/registries', containerRegistryName)
+  name: guid(containerRegistry.id, managedIdentity.id, '7f951dda-4ed3-4680-a7ca-43fe172d538d')
+  scope: containerRegistry
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
     principalId: managedIdentity.properties.principalId
@@ -70,8 +80,8 @@ resource acrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-
 
 // Role assignment: Key Vault Secrets User
 resource keyVaultSecretsUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(keyVaultId, managedIdentity.id, '4633458b-17de-408a-b874-0445c86b69e6')
-  scope: keyVaultId
+  name: guid(keyVault.id, managedIdentity.id, '4633458b-17de-408a-b874-0445c86b69e6')
+  scope: keyVault
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
     principalId: managedIdentity.properties.principalId
@@ -81,8 +91,8 @@ resource keyVaultSecretsUserRoleAssignment 'Microsoft.Authorization/roleAssignme
 
 // Role assignment: Storage File Data SMB Share Contributor
 resource storageFileDataContributorRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(storageAccountId, managedIdentity.id, '0c867c2a-1d8c-454a-a3db-ab2ea1bdc8bb')
-  scope: storageAccountId
+  name: guid(storageAccount.id, managedIdentity.id, '0c867c2a-1d8c-454a-a3db-ab2ea1bdc8bb')
+  scope: storageAccount
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '0c867c2a-1d8c-454a-a3db-ab2ea1bdc8bb')
     principalId: managedIdentity.properties.principalId
@@ -109,11 +119,6 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' 
     }
     zoneRedundant: false
   }
-}
-
-// Get storage account key for Azure Files mount
-resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
-  name: storageAccountName
 }
 
 // Container App
@@ -222,7 +227,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
         }
       ]
       scale: {
-        minReplicas: 0
+        minReplicas: 1
         maxReplicas: 1
         rules: [
           {
