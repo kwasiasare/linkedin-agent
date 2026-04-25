@@ -4,11 +4,11 @@ param location string
 @description('Environment identifier for resource naming')
 param environmentId string
 
-@description('Virtual network resource ID')
-param vnetId string
-
 @description('Private endpoint subnet resource ID')
 param subnetId string
+
+@description('Key Vault private DNS zone resource ID')
+param dnsZoneId string
 
 @description('Key Vault soft delete retention period in days')
 param keyVaultSoftDeleteRetentionDays int
@@ -80,7 +80,7 @@ resource keyVaultDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZone
       {
         name: 'privatelink-vaultcore-azure-net'
         properties: {
-          privateDnsZoneId: resourceId('Microsoft.Network/privateDnsZones', 'privatelink.vaultcore.azure.net')
+          privateDnsZoneId: dnsZoneId
         }
       }
     ]
