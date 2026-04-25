@@ -20,11 +20,11 @@ param keyVaultSoftDeleteRetentionDays int = 90
 
 @description('LinkedIn API credentials (secure)')
 @secure()
-param linkedinApiKey string = uniqueString(resourceGroup().id, 'linkedin')
+param linkedinApiKey string = newGuid()
 
 @description('Anthropic Claude API key (secure)')
 @secure()
-param anthropicApiKey string = uniqueString(resourceGroup().id, 'anthropic')
+param anthropicApiKey string = newGuid()
 
 var uniqueSuffix = uniqueString(resourceGroup().id)
 var environmentId = '${projectName}-${environment}'
@@ -61,6 +61,7 @@ module storage 'modules/storage.bicep' = {
     location: location
     environmentId: environmentId
     storageFileShareSizeGB: storageFileShareSizeGB
+    containerAppSubnetId: network.outputs.containerAppSubnetId
     tags: {
       environment: environment
       project: projectName
@@ -87,8 +88,8 @@ module security 'modules/security.bicep' = {
   params: {
     location: location
     environmentId: environmentId
-    vnetId: network.outputs.vnetId
     subnetId: network.outputs.privateEndpointSubnetId
+    dnsZoneId: network.outputs.keyVaultDnsZoneId
     keyVaultSoftDeleteRetentionDays: keyVaultSoftDeleteRetentionDays
     linkedinApiKey: linkedinApiKey
     anthropicApiKey: anthropicApiKey
@@ -105,7 +106,6 @@ module compute 'modules/compute.bicep' = {
   params: {
     location: location
     environmentId: environmentId
-    vnetId: network.outputs.vnetId
     containerAppSubnetId: network.outputs.containerAppSubnetId
     containerRegistryId: container.outputs.containerRegistryId
     containerRegistryName: container.outputs.containerRegistryName
