@@ -7,6 +7,9 @@ param environmentId string
 @description('File share size in GB')
 param storageFileShareSizeGB int
 
+@description('Container App subnet resource ID')
+param containerAppSubnetId string
+
 @description('Resource tags')
 param tags object
 
@@ -28,8 +31,14 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     minimumTlsVersion: 'TLS1_2'
     supportsHttpsTrafficOnly: true
     networkAcls: {
-      defaultAction: 'Allow'
+      defaultAction: 'Deny'
       bypass: 'AzureServices'
+      virtualNetworkRules: [
+        {
+          id: containerAppSubnetId
+          action: 'Allow'
+        }
+      ]
     }
   }
 }
@@ -63,6 +72,3 @@ output storageAccountName string = storageAccount.name
 
 @description('File share name')
 output fileShareName string = fileShare.name
-
-@description('Storage Account primary key (for Azure Files mount)')
-output storageAccountKey string = storageAccount.listKeys().keys[0].value
